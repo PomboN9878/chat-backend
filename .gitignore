@@ -9,7 +9,7 @@ ENV/
 build/
 dist/
 *.egg-info/
-.env
+app/.env
 .env.local
 .env.*.local
 .vscode/

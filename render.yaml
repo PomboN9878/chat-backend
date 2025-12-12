@@ -1,0 +1,61 @@
+# ==================================
+# Render.com - Configuração de Deploy
+# ==================================
+
+services:
+  # Backend Python
+  - type: web
+    name: chat-backend
+    env: python
+    region: oregon  # Escolha: oregon, frankfurt, singapore
+    plan: free  # free ou starter ($7/mês)
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app_instance --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: APP_NAME
+        value: Chat Backend
+      - key: DEBUG
+        value: false
+      - key: ENVIRONMENT
+        value: production
+      - key: CORS_ORIGINS
+        value: "*"
+      # Supabase (preencher no dashboard do Render)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      # Redis (conectar com Redis do Render)
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: chat-redis
+          property: connectionString
+      # Configurações
+      - key: MAX_MESSAGES_PER_MINUTE
+        value: 30
+      - key: MAX_CONNECTIONS_PER_IP
+        value: 5
+      - key: MESSAGE_QUEUE_RETENTION
+        value: 86400
+      - key: SOCKETIO_PING_TIMEOUT
+        value: 60
+      - key: SOCKETIO_PING_INTERVAL
+        value: 25
+      - key: TYPING_TIMEOUT
+        value: 10
+
+  # Redis
+  - type: redis
+    name: chat-redis
+    region: oregon
+    plan: free  # free (25MB) ou starter ($10/mês com 256MB)
+    maxmemoryPolicy: allkeys-lru  # Remove chaves antigas automaticamente
+    ipAllowList: []  # Vazio = permite de qualquer lugar

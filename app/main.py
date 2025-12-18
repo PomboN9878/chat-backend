@@ -1,5 +1,5 @@
 """
-FastAPI + Socket.io - Backend de Chat em Tempo Real
+FastAPI + Socket.IO - Backend de Chat em Tempo Real
 Entry point da aplicação
 """
 import socketio
@@ -11,17 +11,19 @@ from app.config import settings
 from app.database.supabase import supabase_client
 from app.database.redis_client import redis_client
 from app.sockets.events import register_socket_events
+from app.routes.rooms import router as rooms_router
 
 
 # Socket.IO Server (AsyncServer para ASGI)
 sio = socketio.AsyncServer(
-async_mode='asgi',
+    async_mode='asgi',
     cors_allowed_origins=settings.CORS_ORIGINS.split(',') if settings.CORS_ORIGINS != "*" else "*",
     logger=settings.DEBUG,
     engineio_logger=settings.DEBUG,
     ping_timeout=settings.SOCKETIO_PING_TIMEOUT,
     ping_interval=settings.SOCKETIO_PING_INTERVAL
 )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -37,7 +39,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Redis connection failed: {e}")
 
-    # Registrar evetos Socket.IO
+    # Registrar eventos Socket.IO
     register_socket_events(sio)
     print("Socket.IO events registered")
 
@@ -46,9 +48,9 @@ async def lifespan(app: FastAPI):
     # Shutdown
     print("Shutting down...")
     await redis_client.close()
-    print("Goodbye")
+    print("Goodbye!")
 
-# FastAPI app
+# FastAPI App
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -70,6 +72,9 @@ socket_app = socketio.ASGIApp(
     other_asgi_app=app,
     socketio_path='/socket.io'
 )
+
+# Registrar rotas REST
+app.include_router(rooms_router)
 
 
 # Health Check
@@ -99,6 +104,7 @@ async def root():
         "docs": "/docs",
         "socket": "/socket.io"
     }
+
 
 # Exportar para uvicorn
 app_instance = socket_app
